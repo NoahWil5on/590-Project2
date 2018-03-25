@@ -1,7 +1,7 @@
 "use strict";
 
 //check collision, poorly named but this is Circle AABB collision
-function checkCollision(box,ball){
+function BoxSphereCollision(box,ball){
 
     //vector from box to ball
     var point = {
@@ -15,14 +15,32 @@ function checkCollision(box,ball){
     point.y = Math.max(-box.height / 2, Math.min(box.height / 2, point.y));
 
     //vector of that point to the ball
-    point.x += box.pos.x - ball.pos.x;
-    point.y += box.pos.y - ball.pos.y;
+    point.x += box.pos.x;
+    point.y += box.pos.y;
+
+    var mag = magnitude({
+        x: point.x - ball.pos.x,
+        y: point.y - ball.pos.y
+    });
+    
 
     //is the point less than the radius?
-    if(Math.pow(point.x, 2) + Math.pow(point.y, 2) < Math.pow(ball.rad, 2)){
+    // if(Math.pow(point.x, 2) + Math.pow(point.y, 2) < Math.pow(ball.rad, 2)){
+    //     return true;
+    // }
+    if(mag < ball.rad){
         return true;
     }
 
+    return false;
+}
+function SphereSphereCollision(ball1, ball2){
+    var difference = magnitude({
+        x: (ball1.x - ball2.x),
+        y: (ball1.y - ball2.y)
+    });
+
+    if(difference < (ball1.rad + ball2.rad)) return true;
     return false;
 }
 //returns mouse position ov given element
@@ -43,6 +61,22 @@ function pointInRect(point, rect){
 //interpolate between two numbers
 function lerp(s,e,a){
     return s + ((e - s) * a)
+}
+function magnitude(vec2){
+    return Math.sqrt(Math.pow(vec2.x, 2) +  Math.pow(vec2.y, 2));
+}
+function normalize(vec2){
+    var mag = magnitude(vec2);
+    if(mag === 0){
+        return {
+            x: 0,
+            y: 0
+        };
+    }
+    return {
+        x: vec2.x / mag,
+        y: vec2.y / mag
+    };
 }
 
 //singleton for checking key presses

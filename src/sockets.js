@@ -1,20 +1,27 @@
 let io;
 const players = {};
 
+const getRandomInt = num => Math.floor(Math.random() * num);
+
 const onJoined = (sock) => {
   const socket = sock;
   socket.join('room1');
 
   socket.player = {
-    lastUpdate: Date.now(),
     pos: {
-      x: 0,
-      y: 0,
+      x: 600,
+      y: 337,
     },
-    vel: {
-      x: 0,
-      y: 0,
+    lastPos: {
+      x: 600,
+      y: 337,
     },
+    lastUpdate: Date.now(),
+    hair: getRandomInt(4),
+    shirt: getRandomInt(4),
+    head: getRandomInt(4),
+    shoe: getRandomInt(4),
+    number: getRandomInt(100),
     id: socket.id,
   };
   players[socket.id] = socket.player;
@@ -24,23 +31,22 @@ const onJoined = (sock) => {
     players,
   });
 };
+
 // when the socket recieves a message do these
 const onMessage = (sock) => {
   const socket = sock;
 
-  socket.on('update', (player) => {
-    players[socket.id].pos = player.pos;
-    players[socket.id].vel = player.vel;
+  socket.on('updatePlayer', (player) => {
+    players[socket.id].lastPos = players[socket.id].pos;
+    players[socket.id].pos = player.player.pos;
     players[socket.id].lastUpdate = Date.now();
-  });
-  socket.on('jump', () => {
-    players[socket.id].vel.y = -400;
   });
 };
 const onDisconnect = (sock) => {
   const socket = sock;
 
   socket.on('disconnect', () => {
+    delete players[socket.id];
   });
 };
 
@@ -49,19 +55,11 @@ const configure = (ioServer) => {
 
   setInterval(() => {
     if (players === {} || players === undefined || !players) return;
-
-    Object.keys(players).forEach((id) => {
-      if (players[id] === undefined) return;
-      if (players[id].vel.y < 1000) {
-        players[id].vel.y += 30;
-      }
-    });
     io.emit('updatePlayers', players);
   }, 50);
-
   io.on('connection', (sock) => {
     const socket = sock;
-    socket.id = Math.floor(Math.random() * 1000000);
+    socket.id = getRandomInt(1000000);
 
     onJoined(socket);
     onMessage(socket);

@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Nova+Mono" rel="stylesheet">
     <script src = "./socket.io/socket.io.js"></script>
-    <script src="./assets/scripts/game.js"></script>
+    <script src="./assets/scripts/player.js"></script>
+    <script src="./assets/scripts/ball.js"></script>
     <script src="./assets/scripts/app.js"></script>
     <script src="./assets/scripts/utilities.js"></script>
+    <script src="./assets/scripts/assetManager.js"></script>
     <script src="./assets/scripts/socket.js"></script>
     <link rel="stylesheet" href="./assets/styles/style.css" />
 </head>
@@ -14,7 +17,38 @@
         <canvas id="canvas">
         </canvas>
     </div>
-    <img class="hidden" id="monster" src="./assets/images/monster.ico" alt="monster"/>
-    <img class="hidden" id="patrick" src="./assets/images/patrick.png" alt="patrick"/>
+
+    <!-- Game Assets -->
+    <img class="hidden" id="border" src="./assets/images/Border.png" alt="border"/>
+    <img class="hidden" id="door" src="./assets/images/Door.png" alt="door"/>
+    <img class="hidden" id="soccerball" src="./assets/images/Soccerball.png" alt="soccerball"/>
+
+    <!-- Player options -->
+    <img class="hidden" id="eyes" src="./assets/images/Eyes.png" alt="eyes"/>
+
+    <!-- Hair -->
+    <img class="hidden" id="hair_01" src="./assets/images/Hair_01.png" alt="hair_01"/>
+    <img class="hidden" id="hair_02" src="./assets/images/Hair_02.png" alt="hair_02"/>
+    <img class="hidden" id="hair_03" src="./assets/images/Hair_03.png" alt="hair_03"/>
+    <img class="hidden" id="hair_04" src="./assets/images/Hair_04.png" alt="hair_04"/>
+
+    <!-- Shirt -->
+    <img class="hidden" id="shirt_01" src="./assets/images/Shirt_01.png" alt="shirt_01"/>
+    <img class="hidden" id="shirt_02" src="./assets/images/Shirt_02.png" alt="shirt_02"/>
+    <img class="hidden" id="shirt_03" src="./assets/images/Shirt_03.png" alt="shirt_03"/>
+    <img class="hidden" id="shirt_04" src="./assets/images/Shirt_04.png" alt="shirt_04"/>
+
+    <!-- Head -->
+    <img class="hidden" id="head_01" src="./assets/images/Head_01.png" alt="head_01"/>
+    <img class="hidden" id="head_02" src="./assets/images/Head_02.png" alt="head_02"/>
+    <img class="hidden" id="head_03" src="./assets/images/Head_03.png" alt="head_03"/>
+    <img class="hidden" id="head_04" src="./assets/images/Head_04.png" alt="head_04"/>
+
+    <!-- Shoes -->
+    <img class="hidden" id="shoe_01" src="./assets/images/Shoe_01.png" alt="shoe_01"/>
+    <img class="hidden" id="shoe_02" src="./assets/images/Shoe_02.png" alt="shoe_02"/>
+    <img class="hidden" id="shoe_03" src="./assets/images/Shoe_03.png" alt="shoe_03"/>
+    <img class="hidden" id="shoe_04" src="./assets/images/Shoe_04.png" alt="shoe_04"/>
+
 </body>
 </html>

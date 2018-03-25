@@ -8,17 +8,19 @@ function init(){
 
     // //on joining the server, start up game
     socket.on('join', (data) => {
-        app.main.init(data.player, data.players);
+        app.main.init(data.player,data.players);
     });
-    socket.on('updatePlayers', (players) => {
-        app.game.players = players;
-        app.game.player.vel.y = players[app.game.player.id].vel.y;
+    socket.on('updatePlayers', (data) => {
+        app.player.players = data;
     })
+
+    window.addEventListener('mousemove', function(e) { 
+        var canvas = document.getElementById('canvas')
+        app.main.mouse = getMousePos(canvas, e); 
+    });
 }
-function updatePlayer(){
-    socket.emit('update', app.game.player);
+function updatePlayer(player){
+    socket.emit('updatePlayer', {player})
 }
-function updateJump(){
-    socket.emit('jump', {});
-}
+
 window.onload = init;
