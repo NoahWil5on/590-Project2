@@ -1,5 +1,54 @@
 "use strict";
 
+//particle system maker
+var patricles = {
+    bits: [],
+    init: function(position,num){
+        this.bits = [];
+        var i = 0;
+        //makes desired amount of particles
+        while(i < num){
+            this.bits.push({
+                pos: {
+                    x: position.x + getRandomInt(10) - 5,
+                    y: position.y + getRandomInt(10) - 5,
+                },
+                vel: {
+                    x: getRandomInt(400),
+                    y: getRandomInt(400),
+                },
+                width: getRandomInt(8) + 2,
+                height: getRandomInt(8) + 2, 
+                color: {
+                    r: getRandomInt(255) + 100,
+                    g: getRandomInt(255) + 100,
+                    b: getRandomInt(255) + 100,
+                    a: 1
+                },
+            });
+            i++;
+        }
+    },
+    //updates the particles
+    update: function(dt){
+        for(var i = 0; i < this.bits.length; i++){
+            this.bits[i].pos.x += this.bits[i].vel.x * dt;
+            this.bits[i].pos.y += this.bits[i].vel.y * dt;
+            this.bits[i].vel.x *= .97;
+            this.bits[i].vel.y *= .97;
+
+            this.bits[i].color.a -= .3 * dt;
+            if(this.bits[i].color.a < 0){
+                this.bits[i].color.a = 0;
+            }
+        }
+    }
+}
+//gets a random int between 0 and num
+function getRandomInt(num){
+    return Math.floor(Math.random() * num);
+}
+
 //check collision, poorly named but this is Circle AABB collision
 function BoxSphereCollision(box,ball){
 
@@ -25,15 +74,14 @@ function BoxSphereCollision(box,ball){
     
 
     //is the point less than the radius?
-    // if(Math.pow(point.x, 2) + Math.pow(point.y, 2) < Math.pow(ball.rad, 2)){
-    //     return true;
-    // }
+
     if(mag < ball.rad){
         return true;
     }
 
     return false;
 }
+//checks if two spheres are colliding
 function SphereSphereCollision(ball1, ball2){
     var difference = magnitude({
         x: (ball1.x - ball2.x),
@@ -43,6 +91,18 @@ function SphereSphereCollision(ball1, ball2){
     if(difference < (ball1.rad + ball2.rad)) return true;
     return false;
 }
+//checks if two boxes are colliding
+function BoxBoxCollision(box1, box2){
+    if(box1.pos.x < box2.pos.x + box2.width && 
+        box2.pos.x < box1.pos.x + box1.pos.width){
+            if(box1.pos.y < box2.pos.y + box2.height && 
+                box2.pos.y < box1.pos.y + box1.pos.height){
+        
+            }
+    }
+    return false;
+}
+
 //returns mouse position ov given element
 function getMousePos(canvas, evt) {
     var rect = canvas.getBoundingClientRect();
@@ -62,9 +122,11 @@ function pointInRect(point, rect){
 function lerp(s,e,a){
     return s + ((e - s) * a)
 }
+//get mag of 2d vec
 function magnitude(vec2){
     return Math.sqrt(Math.pow(vec2.x, 2) +  Math.pow(vec2.y, 2));
 }
+//normalizes 2d vec
 function normalize(vec2){
     var mag = magnitude(vec2);
     if(mag === 0){
@@ -94,6 +156,7 @@ var Key = {
     A: 65,
     S: 83,
     D: 68,
+    R: 82,
 
     //checks whether that "keyCode" is pressed
     isDown: function (keyCode) {
@@ -110,5 +173,11 @@ var Key = {
 };
 
 //keyboard event listeners
-window.addEventListener('keyup', function(event) { Key.onKeyup(event); }, false);
-window.addEventListener('keydown', function(event) { Key.onKeydown(event); }, false);
+window.addEventListener('keyup', function(e) { 
+    if(e.keyCode !== Key.R) e.preventDefault();
+    Key.onKeyup(e); 
+}, false);
+window.addEventListener('keydown', function(e) { 
+    if(e.keyCode !== Key.R) e.preventDefault();
+    Key.onKeydown(e);
+ }, false);

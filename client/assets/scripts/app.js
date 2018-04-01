@@ -2,6 +2,7 @@
 
 var app = app || {};
 
+//main app controller
 app.main = {
 
     canvas: undefined,
@@ -15,80 +16,94 @@ app.main = {
     roomNum: 0,
     mouse: undefined,
 
-    init: function(id, players){
+    //set up document and other game componenets
+    init: function(id, players, ball){
         this.canvas = document.getElementById('canvas');
         this.canvas.width = this.WIDTH;
         this.canvas.height = this.HEIGHT;
         this.ctx = this.canvas.getContext('2d');
 
         app.player.init(id, players);
-        app.ball.init();
+        app.ball.init(ball);
 
         this.myUpdate = this.update.bind(this);
         this.myUpdate();
     },
 
+    //update called 60 times a second
     update: function(delta){
         if(this.lastUpdate === undefined) this.lastUpdate = delta;
         this.animationID = requestAnimationFrame(this.myUpdate);
         this.dt = (delta - this.lastUpdate) / 1000;
 
+        //updates major components
         this.clear();
         app.player.update(this.dt,this.ctx);
         app.ball.update(this.dt,this.ctx);
+        patricles.update(this.dt);
+        this.drawParticles();
 
         updatePlayer(app.player.player);
 
         this.lastUpdate = delta;
     },
+    //draw a particles system if there is one
+    drawParticles: function(){
+        for(var i = 0; i < patricles.bits.length; i++){
+            var bit = patricles.bits[i];
+            this.ctx.fillStyle = `rgba(${bit.color.r},${bit.color.g},${bit.color.b},${bit.color.a})`;
+            this.ctx.fillRect(
+                bit.pos.x,
+                bit.pos.y,
+                bit.width,
+                bit.height
+            );
+        }
+    },
+    //creates the particles system
+    doBits: function(pos){
+        patricles.init(pos, 20);
+    },
+    //clears the screen and draws background
     clear: function(){
         this.ctx.save();
 
         this.ctx.fillStyle = "#466622";
         this.ctx.clearRect(0,0,this.WIDTH,this.HEIGHT);
-        this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT);
-
+        
+        this.ctx.drawImage(getProps().field,0,0);
         this.ctx.drawImage(getProps().border,0,0);
         this.drawDoors();
 
-        // this.ctx.fillStyle = "#ff0000";
-        // var rect = {
-        //     x: 200,
-        //     y: 200,
-        //     width: 200,
-        //     height: 200
-        // };
-        // if(pointInRect(this.mouse, rect)){
-        //      this.ctx.fillStyle = "#0000ff";
-        //      this.canvas.style.cursor = "pointer";
-        // }else{
-        //     this.canvas.style.cursor = "initial";
-        // }
-
-        // this.ctx.fillRect(rect.x,rect.y,rect.width,rect.height);
-
         this.ctx.restore();
     },
+    //draw the doors in the background
     drawDoors: function(){
-        switch(this.roomNum){
-            case 0:
+        if(app.player.player === undefined) return;
+        switch(app.player.player.room){
+            case 'room0':
                 this.drawDoor('up');
                 this.drawDoor('down');
                 this.drawDoor('left');
                 this.drawDoor('right');
                 break;
-            case 1:
+            case 'room1':
+                this.drawDoor('down');
                 break;
-            case 2: 
+            case 'room2': 
+                this.drawDoor('left');
                 break;
-            case 3:
+            case 'room3':
+                this.drawDoor('up');
                 break;
-            case 4:
+            case 'room4':
+                this.drawDoor('right');
                 break;
             default: 
                 break;
         }
     },
+    //draw desired dooor
     drawDoor: function(position){
         var door = getProps().door;
         var toRad = Math.PI / 180;

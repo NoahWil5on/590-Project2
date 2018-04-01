@@ -1,15 +1,20 @@
+"use strict"
+
+//get a specific art asset
 const getProps = () => {
     var door = document.getElementById('door');
     var border = document.getElementById('border');
     var ball = document.getElementById('soccerball');
+    var field = document.getElementById('field');
 
     return {
         door,
         border,
-        ball
+        ball,
+        field
     }
 }
-
+//get desired hair
 const getHair = (num) => {
     num++;
     var hair = document.getElementById(`hair_0${num}`);
@@ -17,6 +22,7 @@ const getHair = (num) => {
 
     return document.getElementById(`hair_01`);
 }
+//get desired shoe
 const getShoe = (num) => {
     num++;
     var shoe = document.getElementById(`shoe_0${num}`);
@@ -24,6 +30,7 @@ const getShoe = (num) => {
 
     return document.getElementById(`shoe_01`);
 }
+//get desired head
 const getHead = (num) => {
     num++;
     var head = document.getElementById(`head_0${num}`);
@@ -31,6 +38,7 @@ const getHead = (num) => {
 
     return document.getElementById(`head_01`);
 }
+//get desired shirt
 const getShirt = (num) => {
     num++;
     var shirt = document.getElementById(`shirt_0${num}`);
@@ -38,6 +46,15 @@ const getShirt = (num) => {
 
     return document.getElementById(`shirt_01`);
 }
+//get desired blink
+const getBlink = (num) => {
+    num++;
+    var blink = document.getElementById(`blink_0${num}`);
+    if(blink) return blink;
+
+    return document.getElementById(`blink_01`);
+}
+//get eyes
 const getEyes = () => {
     return document.getElementById(`eyes`)
 }

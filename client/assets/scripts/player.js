@@ -2,19 +2,26 @@
 
 var app = app || {};
 
+//users character controller/component
 app.player = {
 
     skip: true,
     player: undefined,
     players: undefined,
-    playersAnimation: {},
+    playersManager: {},
 
     maxSpeed: 150,
+    blinkTimer: 5,
+    myLastUpdate: 0,
+    alplhaModifier: 0,
+    alpha: .05,
 
+    //initializes player based on response from server
     init: function (player, players) {
-        this.players = players;
-
+        this.myLastUpdate = Date.now();
         this.player = players[player];
+        this.updatePlayersInformation(players);
+
         this.player.pos = {
             x: app.main.WIDTH / 2,
             y: app.main.HEIGHT * (1 / 4),
@@ -25,13 +32,9 @@ app.player = {
         };
         this.player.animationVal = 0;
         this.player.reflect = false;
-
-        // this.players = players;
-
-        // this.player = players[id];
-        // this.player.width = 60;
-        // this.player.height = 81;
+        this.player.blink = getRandomInt(this.blinkTimer);
     },
+    //updates the player 60fps
     update: function (dt, ctx) {
         if (this.skip) {
             this.skip = false;
@@ -39,52 +42,90 @@ app.player = {
         }
         this.updatePlayers(dt);
         this.updateMovement(dt);
+        this.interpolatePositions();
         this.boundPlayer();
 
+        this.player.blink += dt;
         this.draw(ctx);
     },
-    updatePlayers: function(dt){
+    //update all other players in game when server responds
+    updatePlayersInformation: function(players){
+        //lerp timeing info
+        var change = (Date.now() - this.myLastUpdate) / 1000;
+        this.alplhaModifier = 1 / change;
+        this.alpha = .05;
+
+        this.players = players;
+        //cycle through all the player
+        Object.keys(players).forEach((id) => {
+            if (this.player.id === players[id].id || players[id] === undefined) return;
+
+            //updates lerp information
+            var player = this.players[id];
+            this.players[id].dest = {
+                x: player.pos.x + ((player.pos.x - player.lastPos.x) * change * .9),
+                y: player.pos.y + ((player.pos.y - player.lastPos.y) * change * .9),
+            }
+            this.players[id].prevPos = player.pos
+
+            if(this.playersManager[id] === undefined || !this.playersManager[id].pos.x) return
+            this.players[id].prevPos = this.playersManager[id].pos;
+        });
+        this.myLastUpdate = Date.now();
+    },
+    //update the blinking and walking animation the client sees
+    //does not effect other clients
+    updatePlayers: function (dt) {
+        this.alpha += this.alplhaModifier * dt;
+        if(this.alpha > 1) this.alpha = 1;
         Object.keys(this.players).forEach((id) => {
-            if(this.player.id === this.players[id].id || this.players[id] === undefined) return;
+            if (this.player.id === this.players[id].id || this.players[id] === undefined) return;
 
             var player = this.players[id];
-            if(this.playersAnimation[id] === undefined){
-                this.playersAnimation[id] = {
+
+            if (this.playersManager[id] === undefined) {
+                this.playersManager[id] = {
                     animationVal: 0,
                     reflect: false,
                     moving: false,
+                    blink: getRandomInt(this.blinkTimer)
                 };
             }
-            if(player.pos.x !== player.lastPos.x ||
-                player.pos.y !== player.lastPos.y){
-                this.playersAnimation[id].animationVal += dt * 15;
-                this.playersAnimation[id].moving = true;
-            }else{
-                this.playersAnimation[id].animationVal = 0;
-                this.playersAnimation[id].moving = false;
+            this.playersManager[id].blink += dt;
+            if (player.pos.x !== player.lastPos.x ||
+                player.pos.y !== player.lastPos.y) {
+                this.playersManager[id].animationVal += dt * 15;
+                this.playersManager[id].moving = true;
+            } else {
+                this.playersManager[id].animationVal = 0;
+                this.playersManager[id].moving = false;
             }
-            if(player.lastPos.x < player.pos.x){
-                this.playersAnimation[id].reflect = true;
-            }else if(player.lastPos.x > player.pos.x){
-                this.playersAnimation[id].reflect = false;
+            if (player.prevPos.x < player.pos.x) {
+                this.playersManager[id].reflect = true;
+            } else if (player.prevPos.x > player.pos.x) {
+                this.playersManager[id].reflect = false;
             }
-            this.players[id].animationVal = this.playersAnimation[id].animationVal; 
-            this.players[id].reflect = this.playersAnimation[id].reflect;            
-            this.players[id].moving = this.playersAnimation[id].moving;  
+
+            this.players[id].animationVal = this.playersManager[id].animationVal;
+            this.players[id].reflect = this.playersManager[id].reflect;
+            this.players[id].moving = this.playersManager[id].moving;
+            this.players[id].blink = this.playersManager[id].blink;
         });
     },
-    boundPlayer: function(){
-        if(this.player.pos.x < 100){
+    //prevent user from going off screen
+    boundPlayer: function () {
+        if (this.player.pos.x < 100) {
             this.player.pos.x = 100;
-        }else if(this.player.pos.x > app.main.WIDTH - 100){
+        } else if (this.player.pos.x > app.main.WIDTH - 100) {
             this.player.pos.x = app.main.WIDTH - 100;
         }
-        if(this.player.pos.y < 50){
+        if (this.player.pos.y < 50) {
             this.player.pos.y = 50;
-        }else if(this.player.pos.y > app.main.HEIGHT - 140){
+        } else if (this.player.pos.y > app.main.HEIGHT - 140) {
             this.player.pos.y = app.main.HEIGHT - 140;
         }
     },
+    //update clients character based on keyboard input
     updateMovement: function (dt) {
         this.player.vel = {
             x: 0,
@@ -118,23 +159,35 @@ app.player = {
             this.player.animationVal = 0;
         }
     },
+    //draw client's player and other players
     draw: function (ctx) {
         Object.keys(this.players).forEach((id) => {
-            if(this.player.id === this.players[id].id || this.players[id] === undefined) return;
-            this.drawPlayer(ctx, this.players[id]);            
+            if (this.player.id === this.players[id].id || this.players[id] === undefined) return;
+            this.drawPlayer(ctx, this.players[id]);
         });
         this.drawPlayer(ctx, this.player);
     },
+    //draw player function is generic and an be used on any player
     drawPlayer: function (ctx, player) {
+        //get all appropriate asthetics
         var shirt = getShirt(player.shirt);
         var head = getHead(player.head);
         var shoe = getShoe(player.shoe);
         var hair = getHair(player.hair);
+        var blink = getBlink(player.head);
         var eyes = getEyes();
 
         ctx.save();
 
-        ctx.translate(player.pos.x, player.pos.y);
+        //stupid stupid bug I don't understand, this fixes it.
+        if(!player.pos.x){
+            ctx.translate(player.lastPos.x, player.lastPos.y);
+        }else{
+            ctx.translate(player.pos.x, player.pos.y);
+        }
+
+
+        //draw everything in hardcodes spots relative to user position
         if (player.reflect) {
             ctx.scale(-1, 1);
         }
@@ -151,19 +204,29 @@ app.player = {
             hair,
             -hair.width / 2,
             -hair.height / 2 - 83);
-        ctx.drawImage(
-            eyes,
-            -eyes.width / 2,
-            -eyes.height / 2 - 68);
+        if (player.blink % this.blinkTimer < .1) {
+            ctx.drawImage(
+                blink,
+                -blink.width / 2,
+                -blink.height / 2 - 68);
+        } else {
+            ctx.drawImage(
+                eyes,
+                -eyes.width / 2,
+                -eyes.height / 2 - 68);
+        }
+
 
         if (player.reflect) {
             ctx.scale(-1, 1);
         }
+        //draw the number on the player's jersey
         this.drawNumber(ctx, player);
 
 
         ctx.restore();
     },
+    //draws number and outline of number on jersey
     drawNumber: function (ctx, player) {
         ctx.save();
 
@@ -180,6 +243,7 @@ app.player = {
 
         ctx.restore();
     },
+    //draws the shoes of any given player based on animation psoition
     drawShoes: function (ctx, player, shoe) {
         ctx.save();
 
@@ -187,8 +251,8 @@ app.player = {
         var offsetY_01 = 0;
         var offsetY_02 = 0;
 
+        //use sin and cosine to derive position of individual feet
         if (player.moving) {
-            console.log(player.animationVal);
             offsetX = Math.sin(player.animationVal) * 8;
             offsetY_01 = Math.cos(player.animationVal) * 8;
             offsetY_02 = Math.cos(player.animationVal + Math.PI) * 5;
@@ -206,42 +270,21 @@ app.player = {
             -shoe.height / 2 + 42 + offsetY_02);
 
         ctx.restore()
-    }
-    // interpolatePositions: function(){
+    },
+    //lerp other clients so the user's view is less choppy.
+    interpolatePositions: function(){
 
-    //     Object.keys(this.players).forEach(id => {
-    //         if(id === this.player.id) return;
-    //         player = this.players[id];
+        Object.keys(this.players).forEach(id => {
+            if(this.player.id === this.players[id].id) return;            
+            var player = this.players[id];
 
-    //         dt = (Date.now() - player.lastUpdate) / 1000;
+            this.players[id].pos.x = lerp(player.prevPos.x, player.dest.x, this.alpha);
+            this.players[id].pos.y = lerp(player.prevPos.y, player.dest.y, this.alpha);
 
-    //         player.dest = {
-    //             x: player.pos.x + player.vel.x * dt,
-    //             y: player.pos.y + player.vel.y * dt
-    //         };
-    //         player.alpha = 
-
-    //         player.pos.x = lerp()
-    //     })
-    //     //other player
-    //     this.player2.pos.x = lerp(this.player2.lastPos.x, this.player2.dest.x, this.player2.alpha);
-    //     this.player2.pos.y = lerp(this.player2.lastPos.y, this.player2.dest.y, this.player2.alpha);
-    //     this.player2.alpha += this.lagAlpha;
-    //     if(this.player2.alpha > 1){
-    //         this.player2.alpha = 1;
-    //     }
-    //     this.boundPlayer(this.player2);
-
-    //     //ball
-    //     if(!app.main.host){
-    //         if(this.ball.pos.x === this.ball.lastPos.x &&
-    //             this.ball.pos.y === this.ball.pos.y) return;
-    //         this.ball.pos.x = lerp(this.ball.lastPos.x, this.ball.dest.x, this.ball.alpha);
-    //         this.ball.pos.y = lerp(this.ball.lastPos.y, this.ball.dest.y, this.ball.alpha);
-    //         this.ball.alpha += this.lagAlpha;
-    //         if(this.ball.alpha > 1){
-    //             this.ball.alpha = 1;
-    //         }            
-    //     }
-    // },
+            this.playersManager[id].pos = {
+                x: this.players[id].pos.x,
+                y: this.players[id].pos.y  
+            }
+        })
+    },
 };

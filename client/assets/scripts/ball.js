@@ -2,69 +2,48 @@
 
 var app = app || {};
 
+//games ball componenet
 app.ball = {
 
     skip: true,
     speed: 100,
     borderWidth: 118,
+    myLastUpdate: undefined,
+    alpha: .05,
+    alplhaModifier: 0,
 
     ball: undefined,
-    drag: .985,
+    lastPos: undefined,
+    prevPos: undefined,
+    myRotation: 0,
 
-    init: function () {
-        this.ball = {
-            pos: {
-                x: app.main.WIDTH / 2,
-                y: app.main.HEIGHT / 2,
-            },
-            vel: {
-                x: 0,
-                y: 0,
-            },
-            rotation: 0,
-        };
+    //create the ball based on response from socket
+    init: function (ball) {
+        this.ball = ball;
+        this.lastPos = ball.pos;
+        this.prevPos = ball.pos;
+
+        this.myLastUpdate = Date.now();
+        this.alpha = .05;
     },
+    //update 60 fps
     update: function (dt, ctx) {
+        if(this.alplhaModifier > 0){
+            this.alpha += this.alplhaModifier * dt;
+        }
+        if(this.alpha > 1) this.alpha = 1;
+
         if (this.skip) {
             this.skip = false;
             return;
         }
-        this.checkCollisions();
         this.updateMovement(dt);
         this.boundBall();
 
         this.draw(ctx);
     },
-    checkCollisions: function () {
-        var ball = getProps().ball;
-        var ballCollider = {
-            pos: {
-                x: this.ball.pos.x,
-                y: this.ball.pos.y,
-            },
-            rad: ball.width / 2
-        };
-        var boxCollider = {
-            pos: {
-                x: app.player.player.pos.x,
-                y: app.player.player.pos.y + 40,
-            },
-            width: 60,
-            height: 20
-        }
-        if (!BoxSphereCollision(boxCollider, ballCollider)) return
-        var myVector = {
-            x: 0,
-            y: 0
-        }
-
-        myVector.x = boxCollider.pos.x - ballCollider.pos.x;
-        myVector.y = boxCollider.pos.y - ballCollider.pos.y;
-        myVector = normalize(myVector);
-
-        this.ball.vel.x -= myVector.x * this.speed;
-        this.ball.vel.y -= myVector.y * this.speed;
-    },
+    //prevent ball from visual breaking any barriers (does not effect)
+    //other clients
     boundBall: function () {
         if (this.ball.pos.x < this.borderWidth) {
             this.ball.pos.x = this.borderWidth;
@@ -81,30 +60,46 @@ app.ball = {
             this.ball.vel.y *= -1;
         }
     },
+    //get new information about the ball and update lerp information
+    updateBallInformation: function (ball){
+        var change = (Date.now() - this.myLastUpdate) / 1000;
+        if(change > 0) this.alplhaModifier = 1 / change;
+        this.alpha = 0.05;
+        
+        this.prevPos = this.ball.pos;
+        this.ball = ball;
+        this.ball.dest = {
+            x: ball.pos.x + ((ball.pos.x - this.lastPos.x) * change),
+            y: ball.pos.y + ((ball.pos.y - this.lastPos.y) * change),
+        }
+        this.lastPos = ball.pos;
+        this.myLastUpdate = Date.now();
+    },
+    //lerp ball
     updateMovement: function (dt) {
-        this.ball.vel.x *= this.drag;
-        this.ball.vel.y *= this.drag;
-
-        if (magnitude(this.ball.vel) < 10) {
-            this.ball.vel.x = 0;
-            this.ball.vel.y = 0;
+        if(this.ball === undefined || this.ball.dest === undefined ){
+            return;
         }
 
-        this.ball.pos.x += this.ball.vel.x * dt;
-        this.ball.pos.y += this.ball.vel.y * dt;
+        this.ball.pos.x = lerp(this.prevPos.x, this.ball.dest.x, this.alpha);
+        this.ball.pos.y = lerp(this.prevPos.y, this.ball.dest.y, this.alpha);
     },
+    //draw ball
     draw: function (ctx) {
+        if(this.ball === undefined) return;
+
         var ball = getProps().ball;
         var toRad = Math.PI / 180;
 
         ctx.save();
 
-        var multiplier = 1;
-        if(this.ball.vel.x < 0) multiplier = -1;
+        var multiplier = 1.1;
+        if(this.ball.vel.x < 0) multiplier = -1.1;
 
-        this.ball.rotation += ((magnitude(this.ball.vel) * toRad) / (ball.width / 2)) * multiplier;
+        //rotate based on speed of ball
+        this.myRotation += ((magnitude(this.ball.vel) * toRad) / (ball.width / 2)) * multiplier;
         ctx.translate(this.ball.pos.x, this.ball.pos.y);
-        ctx.rotate(this.ball.rotation);
+        ctx.rotate(this.myRotation);
         ctx.drawImage(ball, -ball.width / 2, -ball.height / 2);
 
         ctx.restore();
